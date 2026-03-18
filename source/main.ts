@@ -214,7 +214,63 @@ export const methods: { [key: string]: (...any: any) => any } = {
 
     async getEnabledTools() {
         return toolManager.getEnabledTools();
-    }
+    },
+
+    /**
+     * Start the Cocos Creator browser preview.
+     * Tries multiple known Editor.Message APIs across CC 3.x versions.
+     */
+    async startPreview(scene?: string) {
+        const results: Record<string, any> = {};
+        
+        // CC 3.x preview package messages (try all variants)
+        const attempts = [
+            ['preview', 'open'],
+            ['preview', 'open', scene ? { scene } : undefined],
+            ['preview', 'start-server'],
+            ['preview', 'open-browser'],
+        ];
+
+        for (const [pkg, msg, arg] of attempts) {
+            try {
+                const result = arg !== undefined
+                    ? await (Editor.Message as any).request(pkg, msg, arg)
+                    : await (Editor.Message as any).request(pkg, msg);
+                return { success: true, message: `Preview started via [${pkg}:${msg}]`, data: result };
+            } catch(e: any) {
+                results[`${pkg}:${msg}`] = e.message;
+            }
+        }
+        return { success: false, error: 'All preview start attempts failed', details: results };
+    },
+
+    /**
+     * Stop the Cocos Creator preview.
+     */
+    async stopPreview() {
+        try {
+            const result = await (Editor.Message as any).request('preview', 'close');
+            return { success: true, data: result };
+        } catch(e: any) {
+            return { success: false, error: e.message };
+        }
+    },
+
+    /**
+     * Query Cocos Creator preview config/port.
+     */
+    async queryPreviewInfo() {
+        const results: Record<string, any> = {};
+        const queries = ['query-preview-config', 'query-server-port', 'query-config', 'get-url', 'get-server-url'];
+        for (const q of queries) {
+            try {
+                results[q] = await (Editor.Message as any).request('preview', q);
+            } catch(e: any) {
+                results[q] = `ERR: ${e.message}`;
+            }
+        }
+        return { success: true, data: results };
+    },
 };
 
 /**

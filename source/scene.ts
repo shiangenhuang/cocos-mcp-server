@@ -357,6 +357,76 @@ export const methods: { [key: string]: (...any: any) => any } = {
     /**
      * Set component property
      */
+    /**
+     * Start the Cocos Creator preview server (opens browser preview).
+     * Uses Editor.Message to trigger the 'preview' package.
+     */
+    async startPreview(scene?: string) {
+        try {
+            // Try multiple known preview messages across CC 3.x versions
+            const tryMessages = [
+                () => (Editor.Message as any).request('preview', 'open', { scene }),
+                () => (Editor.Message as any).request('preview', 'open'),
+                () => (Editor.Message as any).request('preview', 'start-server'),
+                () => (Editor.Message as any).request('preview', 'open-browser'),
+            ];
+
+            for (const fn of tryMessages) {
+                try {
+                    const result = await fn();
+                    return { success: true, message: 'Preview started', data: result };
+                } catch (e: any) {
+                    // try next
+                }
+            }
+
+            // Fallback: query the preview info to see if already running
+            try {
+                const info = await (Editor.Message as any).request('preview', 'query-preview-config');
+                return { success: true, message: 'Preview may already be running', data: info };
+            } catch(e: any) {}
+
+            return { success: false, error: 'Could not start preview. Use the editor Play button.' };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
+     * Stop the Cocos Creator preview server.
+     */
+    async stopPreview() {
+        try {
+            await (Editor.Message as any).request('preview', 'close');
+            return { success: true, message: 'Preview stopped' };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
+     * Query Cocos preview server port / URL.
+     */
+    async queryPreviewPort() {
+        try {
+            const results: any = {};
+            
+            // Try various message names that different CC versions use
+            const queries = ['query-preview-config', 'query-server-port', 'query-config', 'get-url'];
+            for (const q of queries) {
+                try {
+                    results[q] = await (Editor.Message as any).request('preview', q);
+                } catch(e: any) {
+                    results[q] = `error: ${e.message}`;
+                }
+            }
+
+            return { success: true, data: results };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    },
+
     setComponentProperty(nodeUuid: string, componentType: string, property: string, value: any) {
         try {
             const { director, js } = require('cc');

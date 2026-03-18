@@ -136,6 +136,15 @@
                 "methods": [
                     "getEnabledTools"
                 ]
+            },
+            "startPreview": {
+                "methods": ["startPreview"]
+            },
+            "stopPreview": {
+                "methods": ["stopPreview"]
+            },
+            "queryPreviewInfo": {
+                "methods": ["queryPreviewInfo"]
             }
         },
         "scene": {
@@ -151,7 +160,10 @@
                 "setComponentProperty",
                 "getCurrentSceneInfo",
                 "getSceneHierarchy",
-                "createPrefabFromNode"
+                "createPrefabFromNode",
+                "startPreview",
+                "stopPreview",
+                "queryPreviewPort"
             ]
         }
     }
